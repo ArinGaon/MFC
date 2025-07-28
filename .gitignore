@@ -1,0 +1,60 @@
+# 빌드 출력물
+*.obj
+*.exe
+*.dll
+*.lib
+*.pdb
+*.exp
+
+# 빌드 디렉터리
+Debug/
+Release/
+x64/
+x86/
+ipch/
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.VC.opendb
+
+# 사용자별 설정 파일
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio 관련
+.vscode/
+.vs/
+*.ncb
+*.log
+
+# 중간 파일
+*.idb
+*.tlog
+*.lastbuildstate
+
+# 기타 임시 파일
+*.aps
+*.cache
+*.ilk
+*.res
+*.tmp
+
+# 로그 파일
+*.log
+
+# 리눅스/유닉스 관련 무시 항목 (크로스 플랫폼 대비)
+*.swp
+*~
+
+# CMake 사용 시 (선택 사항)
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# 테스트용 디렉토리나 데이터 (선택 사항)
+tests/output/
+*.csv
+*.json
