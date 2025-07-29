@@ -189,29 +189,52 @@ void CMFCGradeDlg::ReadTextFile(const CString& filePath)
 
 	int len = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)pBuf, -1, NULL, 0);
 	WCHAR* pWStr = new WCHAR[len];
-	MultiByteToWideChar(CP_UTF8, 0, (LPCCH)pBuf, -1, NULL, 0);
+	MultiByteToWideChar(CP_UTF8, 0, (LPCCH)pBuf, -1, pWStr, len);
 	content = CString(pWStr);
 
 	delete[] pBuf;
 	delete[] pWStr;
-
+	
 	// 한 줄씩 분리
 	CStringArray lines;
-	int start = 0;
-	while (start < content.GetLength())
+	CString current;
+	for (int i = 0; i < content.GetLength(); i++)
 	{
-		int end = content.Find(_T("\n"), start);
-		if (end == -1)
-			end = content.GetLength();
+		TCHAR ch = content[i];
 
-		CString line = content.Mid(start, end - start);
-		line.Trim(); // \r또는 공백 제거
-
-		if (!line.IsEmpty())
-			lines.Add(line);
-
-		start = end + 1;
+		if (ch == _T('\r'))
+		{
+			if (!current.IsEmpty())
+			{
+				current.Trim();
+				if (!current.IsEmpty())
+					lines.Add(current);
+				current.Empty();
+			}
+			if (i + 1 < content.GetLength() && content[i + 1] == _T('\n'))
+				++i;
+		}
+		else if (ch == _T('\n'))
+		{
+			if (!current.IsEmpty())
+			{
+				current.Trim();
+				if (!current.IsEmpty())
+					lines.Add(current);
+				current.Empty();
+			}
+		}
+		else
+			current += ch;
 	}
+
+	if (!current.IsEmpty())
+	{
+		current.Trim();
+		if (!current.IsEmpty())
+			lines.Add(current);
+	}
+
 
 	// 리스트 초기화
 	m_ClistScore.DeleteAllItems();
@@ -220,6 +243,7 @@ void CMFCGradeDlg::ReadTextFile(const CString& filePath)
 	file.Close();
 }
 
+// 받은 문자열을 parsing
 void CMFCGradeDlg::Parsing(const CString& line, TCHAR delimiter, CStringArray& outArray)
 {
 	outArray.RemoveAll();
@@ -236,4 +260,22 @@ void CMFCGradeDlg::Parsing(const CString& line, TCHAR delimiter, CStringArray& o
 	CString lastToken = line.Mid(start);
 	lastToken.Trim();
 	outArray.Add(lastToken);
+}
+
+// 파싱된 문자열을 구조체에 삽입
+void CMFCGradeDlg::ProcessLine(const CString& line)
+{
+	CStringArray tokens;
+	Parsing(line, _T(','), tokens);
+
+	if (tokens.GetCount() == 5)
+	{
+		studentInfo student;
+		student.name = tokens[0];
+		student.studentID = tokens[1];
+		student.korean = _ttoi(tokens[2]);
+		student.english = _ttoi(tokens[3]);
+		student.math = _ttoi(tokens[4]);
+		m_messageQueue.push(student);
+	}
 }
