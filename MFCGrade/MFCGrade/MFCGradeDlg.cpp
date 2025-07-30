@@ -323,3 +323,19 @@ void CMFCGradeDlg::DisplayStudentList()
 	}
 }
 
+void CMFCGradeDlg::OnBnClickedButtonCalc()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	std::vector<studentInfo> students;
+	std::queue<studentInfo> copyQueue = m_messageQueue;
+	while (!copyQueue.empty())
+	{
+		students.push_back(copyQueue.front());
+		copyQueue.pop();
+	}
+
+	if (students.empty())
+	{
+	}
+
+}
