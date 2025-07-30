@@ -68,6 +68,7 @@ BEGIN_MESSAGE_MAP(CMFCGradeDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_BUTTON_Browse, &CMFCGradeDlg::OnBnClickedButtonBrowse)
+	ON_BN_CLICKED(IDC_BUTTON_CALC, &CMFCGradeDlg::OnBnClickedButtonCalc)
 END_MESSAGE_MAP()
 
 
@@ -108,6 +109,9 @@ BOOL CMFCGradeDlg::OnInitDialog()
 	m_ClistScore.InsertColumn(2, _T("국어"), LVCFMT_CENTER, 60);
 	m_ClistScore.InsertColumn(3, _T("영어"), LVCFMT_CENTER, 60);
 	m_ClistScore.InsertColumn(4, _T("수학"), LVCFMT_CENTER, 60);
+	m_ClistScore.InsertColumn(5, _T("총점"), LVCFMT_CENTER, 60);
+	m_ClistScore.InsertColumn(6, _T("평균"), LVCFMT_CENTER, 60);
+	m_ClistScore.InsertColumn(7, _T("석차"), LVCFMT_CENTER, 60);
 
 	m_ClistScore.SetExtendedStyle(LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
 
@@ -235,10 +239,16 @@ void CMFCGradeDlg::ReadTextFile(const CString& filePath)
 			lines.Add(current);
 	}
 
-
 	// 리스트 초기화
 	m_ClistScore.DeleteAllItems();
 
+	for (int i = 0; i < lines.GetSize(); i++)
+	{
+		ProcessLine(lines[i]);
+	}
+
+	// 리스트 출력
+	DisplayStudentList();
 
 	file.Close();
 }
@@ -279,3 +289,37 @@ void CMFCGradeDlg::ProcessLine(const CString& line)
 		m_messageQueue.push(student);
 	}
 }
+
+void CMFCGradeDlg::DisplayStudentList()
+{
+	m_ClistScore.DeleteAllItems();
+
+	std::queue<studentInfo> copyQueue = m_messageQueue;
+
+	int row = 0;
+	while (!copyQueue.empty())
+	{
+		studentInfo s = copyQueue.front();
+		copyQueue.pop();
+
+		CString str;
+		s.total = s.korean + s.english + s.math;
+		s.average = (s.korean + s.english + s.math) / 3.0;
+
+		m_ClistScore.InsertItem(row, s.name);
+		m_ClistScore.SetItemText(row, 1, s.studentID);
+
+		str.Format(_T("%d"), s.korean);
+		m_ClistScore.SetItemText(row, 2, str);
+		str.Format(_T("%d"), s.english);
+		m_ClistScore.SetItemText(row, 3, str);
+		str.Format(_T("%d"), s.math);
+		m_ClistScore.SetItemText(row, 4, str);
+		str.Format(_T("%d"), s.total);
+		m_ClistScore.SetItemText(row, 5, str);
+		str.Format(_T("%.2f"), s.average);
+		m_ClistScore.SetItemText(row, 6, str);
+		row++;
+	}
+}
+
