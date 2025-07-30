@@ -1,6 +1,8 @@
 # 빌드 출력물
 *.obj
 *.exe
+# exe 디렉토리 안의 exe는 예외로 포함
+!EXE/*.exe
 *.dll
 *.lib
 *.pdb
