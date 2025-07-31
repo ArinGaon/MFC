@@ -336,6 +336,64 @@ void CMFCGradeDlg::OnBnClickedButtonCalc()
 
 	if (students.empty())
 	{
+		AfxMessageBox(_T("데이터가 없습니다."));
+		return;
+	}
+
+	// 총점 계산
+	for (int i = 0; i < (int)students.size(); i++)
+	{
+		students[i].total = students[i].korean + students[i].english + students[i].math;
+		students[i].average = static_cast<double>(students[i].total) / 3.0;
+	}
+
+	// sort
+	std::sort(students.begin(), students.end(), [](const studentInfo& a, const studentInfo& b)
+		{
+			return a.average > b.average;
+		});
+
+	int rank = 1;
+	students[0].grade = 1;
+	for (int i = 1; i < (int)students.size(); i++)
+	{
+		if (students[i].average == students[i - 1].average)
+		{
+			students[i].grade = students[i - 1].grade; // 동점자 처리
+		}
+		else
+		{
+			students[i].grade = i + 1;
+		}
+	}
+
+	// listCtrl에 출력
+	m_ClistScore.DeleteAllItems();
+	for (int row = 0; row < (int)students.size(); row++)
+	{
+		studentInfo& s = students[row];
+		CString str;
+
+		m_ClistScore.InsertItem(row, s.name);
+		m_ClistScore.SetItemText(row, 1, s.studentID);
+
+		str.Format(_T("%d"), s.korean);
+		m_ClistScore.SetItemText(row, 2, str);
+
+		str.Format(_T("%d"), s.english);
+		m_ClistScore.SetItemText(row, 3, str);
+
+		str.Format(_T("%d"), s.math);
+		m_ClistScore.SetItemText(row, 4, str);
+
+		str.Format(_T("%d"), s.total);
+		m_ClistScore.SetItemText(row, 5, str);
+
+		str.Format(_T("%.2f"), s.average);
+		m_ClistScore.SetItemText(row, 6, str);
+
+		str.Format(_T("%d"), s.grade);
+		m_ClistScore.SetItemText(row, 7, str);
 	}
 
 }
