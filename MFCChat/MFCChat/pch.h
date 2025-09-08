@@ -10,6 +10,7 @@
 // 여기에 미리 컴파일하려는 헤더 추가
 #pragma comment(lib, "Ws2_32.lib")
 #define WIN32_LEAN_AND_MEAN
+#define _WIN32_WINNT 0x0601 // Windows 7을 최소 지원
 #include "framework.h"
 #include <winsock2.h>
 #include <ws2tcpip.h>
