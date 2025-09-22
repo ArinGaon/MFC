@@ -9,11 +9,22 @@
 #define IDC_EDIT_LOG                    102
 #define IDR_MAINFRAME                   128
 #define IDC_EDIT_INPUT                  1002
+#define IDC_EDIT_IP                     1002
 #define IDC_EDIT_HOST                   1003
 #define IDC_EDIT_PORT                   1004
 #define IDC_BTN_SEND                    1005
+#define IDC_BTN_START                   1005
 #define IDC_BTN_SEND2                   1006
 #define IDC_BTN_CONNECT                 1006
+#define IDC_EDIT_IP2                    1007
+#define IDC_STATIC_PORT                 1008
+#define IDC_STATIC_IP                   1009
+#define IDC_EDIT_SEND                   1010
+#define IDC_LIST_CHAT                   1011
+#define IDC_BTN_FILE                    1012
+#define IDC_BTN_LOG                     1013
+#define IDC_BTN_LOG2                    1014
+#define IDC_BTN_SENDBTN                 1014
 
 // Next default values for new objects
 // 
@@ -21,7 +32,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        130
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1006
+#define _APS_NEXT_CONTROL_VALUE         1012
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
