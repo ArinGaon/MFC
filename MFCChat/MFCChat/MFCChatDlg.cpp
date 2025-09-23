@@ -40,6 +40,12 @@ CAboutDlg::CAboutDlg() : CDialogEx(IDD_ABOUTBOX)
 void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+
+	DDX_Control(pDX, IDC_EDIT_IP, m_editIP);
+	DDX_Control(pDX, IDC_EDIT_LOG, m_editPort);
+	DDX_Control(pDX, IDC_LIST_CHAT, m_listChat);
+	DDX_Control(pDX, IDC_EDIT_SEND, m_editSend);
+	DDX_Control(pDX, IDC_BTN_SENDBTN, m_btnSend);
 }
 
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
