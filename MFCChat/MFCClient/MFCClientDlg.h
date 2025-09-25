@@ -4,6 +4,8 @@
 
 #pragma once
 #include "CConnectSocket.h"
+#include <string.h>
+#include <vector>
 
 
 // CMFCClientDlg 대화 상자
@@ -24,7 +26,7 @@ public:
 
 // 구현입니다.
 protected:
-	HICON m_hIcon;
+	HICON m_hIcon;	
 
 	// 생성된 메시지 맵 함수
 	virtual BOOL OnInitDialog();
@@ -35,10 +37,18 @@ protected:
 public:
 	CConnectSocket m_ConnectSocket;
 	void AddMessageToList(CString str);
+	void ReadFile(const CString& filePath);
+	void SendMsg(CString string);
+	
+	std::vector<CString> m_logMessages;
 
+	CEdit m_editFilePath;
 	CString m_strIP;
 	CListBox m_listMsg;
 	CString m_strMsg;
+	CStatic m_staticStatus;
+
 	afx_msg void OnBnClickedButtonConnect();
 	afx_msg void OnBnClickedButtonSend();
+	afx_msg void OnBnClickedButtonSendlog();
 };

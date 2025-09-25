@@ -64,6 +64,8 @@ void CMFCClientDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_IP, m_strIP);
 	DDX_Control(pDX, IDC_LIST_MSG, m_listMsg);
 	DDX_Text(pDX, IDC_EDIT_SEND, m_strMsg);
+	DDX_Control(pDX, IDC_EDIT_FILEPATH, m_editFilePath);
+	DDX_Control(pDX, IDC_STATIC_STATUS, m_staticStatus);
 }
 
 BEGIN_MESSAGE_MAP(CMFCClientDlg, CDialogEx)
@@ -72,6 +74,7 @@ BEGIN_MESSAGE_MAP(CMFCClientDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_BUTTON_CONNECT, &CMFCClientDlg::OnBnClickedButtonConnect)
 	ON_BN_CLICKED(IDC_BUTTON_SEND, &CMFCClientDlg::OnBnClickedButtonSend)
+	ON_BN_CLICKED(IDC_BUTTON_SENDLOG, &CMFCClientDlg::OnBnClickedButtonSendlog)
 END_MESSAGE_MAP()
 
 
@@ -178,13 +181,17 @@ void CMFCClientDlg::OnBnClickedButtonConnect()
 void CMFCClientDlg::OnBnClickedButtonSend()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	UpdateData(TRUE);
+	SendMsg(m_strMsg);
+}
 
-	CT2A ascii(m_strMsg);
+void CMFCClientDlg::SendMsg(CString string)
+{
+	UpdateData(TRUE);
+	CT2A ascii(string);
 	m_ConnectSocket.Send(ascii.m_psz, strlen(ascii.m_psz));
 
-	AddMessageToList(_T("ME: ") + m_strMsg);
-	m_strMsg = _T("");
+	AddMessageToList(string);
+	string = _T("");
 	UpdateData(FALSE);
 }
 
@@ -192,4 +199,80 @@ void CMFCClientDlg::AddMessageToList(CString str)
 {
 	m_listMsg.AddString(str);
 	m_listMsg.SetCurSel(m_listMsg.GetCount() - 1);
+}
+
+
+
+void CMFCClientDlg::OnBnClickedButtonSendlog()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	CFileDialog dlg(TRUE, NULL, NULL, OFN_HIDEREADONLY, _T("로그파일 (*.log)|*log|모든 파일 (*.*)|*.*||"));
+
+	if (dlg.DoModal() == IDOK)
+	{
+		m_editFilePath.SetWindowText(dlg.GetPathName());
+		ReadFile(dlg.GetPathName());
+	}
+}
+
+
+void CMFCClientDlg::ReadFile(const CString& filePath)
+{
+	CFile file;
+	if (!file.Open(filePath, CFile::modeRead | CFile::typeBinary))
+		return;
+	m_staticStatus.SetWindowText(_T("파일 로드 중"));
+	char ch;
+	char prevCh = 0;
+	CString currentLine;
+
+	while (file.Read(&ch, 1) == 1)
+	{
+		// CRLF 처리: \r\n → 줄 나눔
+		if (prevCh == '\r' && ch == '\n')
+		{
+			currentLine.Trim();
+			if (!currentLine.IsEmpty())
+			{
+				
+			}
+			currentLine.Empty();
+			prevCh = 0;
+			continue;
+		}
+
+		// CR 단독 → 줄 나눔
+		if (ch == '\r')
+		{
+			currentLine.Trim();
+			if (!currentLine.IsEmpty())
+				SendMsg(currentLine);
+			currentLine.Empty();
+			prevCh = ch;
+			continue;
+		}
+
+		// LF 단독 → 줄 나눔
+		if (ch == '\n')
+		{
+			currentLine.Trim();
+			if (!currentLine.IsEmpty())
+				SendMsg(currentLine);
+			currentLine.Empty();
+			prevCh = ch;
+			continue;
+		}
+
+		// 일반 문자 누적
+		currentLine += ch;
+		prevCh = ch;
+
+	}
+	// 파일 끝 처리
+	currentLine.Trim();
+	if (!currentLine.IsEmpty())
+		SendMsg(currentLine);
+
+	file.Close();
+	m_staticStatus.SetWindowText(_T("파일 로드 완료"));
 }
