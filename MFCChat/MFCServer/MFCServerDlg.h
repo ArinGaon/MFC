@@ -49,4 +49,5 @@ public:
 	CListBox m_listLog;
 
 	void AddMessageToList(CString str);
+	void RemoveClient(CClientSocket* pClient);
 };

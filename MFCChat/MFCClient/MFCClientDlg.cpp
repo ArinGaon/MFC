@@ -7,6 +7,7 @@
 #include "MFCClient.h"
 #include "MFCClientDlg.h"
 #include "afxdialogex.h"
+#include <String>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -75,6 +76,7 @@ BEGIN_MESSAGE_MAP(CMFCClientDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_CONNECT, &CMFCClientDlg::OnBnClickedButtonConnect)
 	ON_BN_CLICKED(IDC_BUTTON_SEND, &CMFCClientDlg::OnBnClickedButtonSend)
 	ON_BN_CLICKED(IDC_BUTTON_SENDLOG, &CMFCClientDlg::OnBnClickedButtonSendlog)
+	ON_BN_CLICKED(IDC_BUTTON_PAUSE, &CMFCClientDlg::OnBnClickedButtonPause)
 END_MESSAGE_MAP()
 
 
@@ -110,6 +112,7 @@ BOOL CMFCClientDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
+	m_bConnected = FALSE;
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -166,17 +169,22 @@ HCURSOR CMFCClientDlg::OnQueryDragIcon()
 
 void CMFCClientDlg::OnBnClickedButtonConnect()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	UpdateData(TRUE); // UI의 IP 주소 값을 m_strIP 변수로 가져옵니다.
+	// m_bConnected == FALSE
+	if (m_bConnected == FALSE)
+	{
+		UpdateData(TRUE); // UI의 IP 주소 값을 m_strIP 변수로 가져옵니다.
 
-	m_ConnectSocket.Create(); // 1. 소켓을 생성합니다.
-	m_ConnectSocket.m_pDlg = this; // 2. 소켓에 다이얼로그 주소를 알려줍니다.
-
-	// 3. UI에서 입력받은 IP와 7000번 포트로 접속을 시도합니다.
-	m_ConnectSocket.Connect(m_strIP, 7000);
-	// 접속 성공 여부는 OnConnect 함수에서 처리됩니다.
+		m_ConnectSocket.Create();				// 1. 소켓을 생성
+		m_ConnectSocket.m_pDlg = this;			// 2. 소켓에 다이얼로그 주소를 알려줌
+		m_ConnectSocket.Connect(m_strIP, 7000);	// 3. UI에서 입력받은 IP와 7000번 포트로 접속을 시도
+		// 접속 성공 여부는 OnConnect 함수에서 처리됩니다.
+	}
+	// m_bConnected == TRUE
+	else
+	{
+		m_ConnectSocket.Close();
+	}	
 }
-
 
 void CMFCClientDlg::OnBnClickedButtonSend()
 {
@@ -202,17 +210,30 @@ void CMFCClientDlg::AddMessageToList(CString str)
 }
 
 
-
 void CMFCClientDlg::OnBnClickedButtonSendlog()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	CFileDialog dlg(TRUE, NULL, NULL, OFN_HIDEREADONLY, _T("로그파일 (*.log)|*log|모든 파일 (*.*)|*.*||"));
+	if (dlg.DoModal() != IDOK)
+		return;
 
-	if (dlg.DoModal() == IDOK)
+	CString strPathName = dlg.GetPathName();
+	CString temp;
+	CStdioFile fileCounter;
+	int nTotalLines = 0;
+	if (fileCounter.Open(strPathName, CFile::modeRead))
 	{
-		m_editFilePath.SetWindowText(dlg.GetPathName());
-		ReadFile(dlg.GetPathName());
+		while (fileCounter.ReadString(temp)) 
+			nTotalLines++;
+			fileCounter.Close();
+		
 	}
+}
+
+void CMFCClientDlg::OnBnClickedButtonPause()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+
 }
 
 
@@ -225,6 +246,7 @@ void CMFCClientDlg::ReadFile(const CString& filePath)
 	char ch;
 	char prevCh = 0;
 	CString currentLine;
+	MSG msg;
 
 	while (file.Read(&ch, 1) == 1)
 	{
@@ -267,6 +289,12 @@ void CMFCClientDlg::ReadFile(const CString& filePath)
 		currentLine += ch;
 		prevCh = ch;
 
+		// 루프 시 먹통 방지
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
 	}
 	// 파일 끝 처리
 	currentLine.Trim();
@@ -276,3 +304,4 @@ void CMFCClientDlg::ReadFile(const CString& filePath)
 	file.Close();
 	m_staticStatus.SetWindowText(_T("파일 로드 완료"));
 }
+

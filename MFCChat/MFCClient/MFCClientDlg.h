@@ -47,8 +47,10 @@ public:
 	CListBox m_listMsg;
 	CString m_strMsg;
 	CStatic m_staticStatus;
+	BOOL m_bConnected;		// 연결상태확인
 
 	afx_msg void OnBnClickedButtonConnect();
 	afx_msg void OnBnClickedButtonSend();
 	afx_msg void OnBnClickedButtonSendlog();
+	afx_msg void OnBnClickedButtonPause();
 };

@@ -1,12 +1,16 @@
 #include "pch.h"
 #include "CConnectSocket.h"
 #include "MFCClientDlg.h"
+#include "resource.h"
 
 void CConnectSocket::OnConnect(int nErrorCode)
 {
 	if (nErrorCode == 0)
 	{
 		m_pDlg->AddMessageToList(_T("서버에 접속 완료"));
+		// 버튼 수정
+		m_pDlg->SetDlgItemText(IDC_BUTTON_CONNECT, _T("Disconnect"));
+		m_pDlg->m_bConnected = TRUE;
 	}
 	else
 	{
@@ -29,5 +33,8 @@ void CConnectSocket::OnReceive(int nErrorCode)
 void CConnectSocket::OnClose(int nErrorCode)
 {
 	m_pDlg->AddMessageToList(_T("서버와 연결이 종료됨"));
+	// 버튼 수정
+	m_pDlg->SetDlgItemText(IDC_BUTTON_CONNECT, _T("Connect"));
+	m_pDlg->m_bConnected = FALSE;
 	CAsyncSocket::OnClose(nErrorCode);
 }
