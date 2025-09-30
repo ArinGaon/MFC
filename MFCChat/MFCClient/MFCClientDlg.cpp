@@ -151,11 +151,11 @@ void CMFCClientDlg::OnPaint()
 		int y = (rect.Height() - cyIcon + 1) / 2;
 
 		// 아이콘을 그립니다.
-		dc.DrawIcon(x, y, m_hIcon);
+dc.DrawIcon(x, y, m_hIcon);
 	}
 	else
 	{
-		CDialogEx::OnPaint();
+	CDialogEx::OnPaint();
 	}
 }
 
@@ -183,7 +183,7 @@ void CMFCClientDlg::OnBnClickedButtonConnect()
 	else
 	{
 		m_ConnectSocket.Close();
-	}	
+	}
 }
 
 void CMFCClientDlg::OnBnClickedButtonSend()
@@ -218,17 +218,72 @@ void CMFCClientDlg::OnBnClickedButtonSendlog()
 		return;
 
 	CString strPathName = dlg.GetPathName();
-	CString temp;
-	CStdioFile fileCounter;
-	int nTotalLines = 0;
-	if (fileCounter.Open(strPathName, CFile::modeRead))
+
+	CFile file;
+	if (!file.Open(strPathName, CFile::modeRead | CFile::typeBinary))
 	{
-		while (fileCounter.ReadString(temp)) 
-			nTotalLines++;
-			fileCounter.Close();
-		
+		AfxMessageBox(_T("파일을 열 수 없습니다."));
+		return;
 	}
+
+	// 3. CR/LF/CRLF를 모두 처리하는 '완전체' 읽기/전송 루프
+	char ch;
+	char prevCh = 0;
+	CString currentLine; // 현재 읽고 있는 한 줄을 저장할 변수
+	MSG msg;             // UI 멈춤 방지용
+
+	ULONGLONG dwLength = file.GetLength();
+	for (ULONGLONG i = 0; i < dwLength; i++)
+	{
+		file.Read(&ch, 1);
+
+		// [CRLF] 처리: \r\n → \n으로 변환하여 처리 (LF 처리로 넘어감)
+		if (prevCh == '\r' && ch == '\n')
+		{
+			prevCh = ch;
+			continue; // LF 처리에서 줄바꿈이 일어나므로 중복 방지
+		}
+
+		// [CR] 또는 [LF] 처리: \r 이나 \n 을 만나면 한 줄로 간주
+		if (ch == '\r' || ch == '\n')
+		{
+			if (!currentLine.IsEmpty())
+			{
+				// 한 줄을 서버로 전송
+				CT2A ascii(currentLine);
+				m_ConnectSocket.Send(ascii.m_psz, strlen(ascii.m_psz));
+				currentLine.Empty(); // 보낸 후에는 비움
+			}
+		}
+		else
+		{
+			// 줄바꿈 문자가 아니면 현재 줄에 추가
+			currentLine += ch;
+		}
+
+		prevCh = ch;
+
+		// ★★★ UI 멈춤 방지 + 네트워크 병목 완화 (핵심) ★★★
+		Sleep(0);
+		if (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+	}
+
+	// 파일 끝에 줄바꿈 없이 내용이 남아있는 경우 마지막 줄 전송
+	if (!currentLine.IsEmpty())
+	{
+		CT2A ascii(currentLine);
+		m_ConnectSocket.Send(ascii.m_psz, strlen(ascii.m_psz));
+	}
+
+	file.Close();
+	AfxMessageBox(_T("로그 파일 전송을 완료했습니다."));
 }
+
+
+
 
 void CMFCClientDlg::OnBnClickedButtonPause()
 {
