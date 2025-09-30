@@ -159,25 +159,22 @@ dc.DrawIcon(x, y, m_hIcon);
 	}
 }
 
-// 사용자가 최소화된 창을 끄는 동안에 커서가 표시되도록 시스템에서
-//  이 함수를 호출합니다.
 HCURSOR CMFCClientDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
 }
-
 
 void CMFCClientDlg::OnBnClickedButtonConnect()
 {
 	// m_bConnected == FALSE
 	if (m_bConnected == FALSE)
 	{
-		UpdateData(TRUE); // UI의 IP 주소 값을 m_strIP 변수로 가져옵니다.
+		UpdateData(TRUE);
 
 		m_ConnectSocket.Create();				// 1. 소켓을 생성
 		m_ConnectSocket.m_pDlg = this;			// 2. 소켓에 다이얼로그 주소를 알려줌
 		m_ConnectSocket.Connect(m_strIP, 7000);	// 3. UI에서 입력받은 IP와 7000번 포트로 접속을 시도
-		// 접속 성공 여부는 OnConnect 함수에서 처리됩니다.
+		// 접속 성공 여부는 OnConnect 함수에서 처리
 	}
 	// m_bConnected == TRUE
 	else
@@ -188,7 +185,7 @@ void CMFCClientDlg::OnBnClickedButtonConnect()
 
 void CMFCClientDlg::OnBnClickedButtonSend()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가
 	SendMsg(m_strMsg);
 }
 
@@ -212,7 +209,7 @@ void CMFCClientDlg::AddMessageToList(CString str)
 
 void CMFCClientDlg::OnBnClickedButtonSendlog()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가
 	CFileDialog dlg(TRUE, NULL, NULL, OFN_HIDEREADONLY, _T("로그파일 (*.log)|*log|모든 파일 (*.*)|*.*||"));
 	if (dlg.DoModal() != IDOK)
 		return;
@@ -237,14 +234,14 @@ void CMFCClientDlg::OnBnClickedButtonSendlog()
 	{
 		file.Read(&ch, 1);
 
-		// [CRLF] 처리: \r\n → \n으로 변환하여 처리 (LF 처리로 넘어감)
+		// CRLF 처리
 		if (prevCh == '\r' && ch == '\n')
 		{
 			prevCh = ch;
 			continue; // LF 처리에서 줄바꿈이 일어나므로 중복 방지
 		}
 
-		// [CR] 또는 [LF] 처리: \r 이나 \n 을 만나면 한 줄로 간주
+		// CR/LF 각각 처리
 		if (ch == '\r' || ch == '\n')
 		{
 			if (!currentLine.IsEmpty())
@@ -257,14 +254,11 @@ void CMFCClientDlg::OnBnClickedButtonSendlog()
 		}
 		else
 		{
-			// 줄바꿈 문자가 아니면 현재 줄에 추가
 			currentLine += ch;
 		}
 
 		prevCh = ch;
 
-		// ★★★ UI 멈춤 방지 + 네트워크 병목 완화 (핵심) ★★★
-		Sleep(0);
 		if (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
@@ -281,8 +275,6 @@ void CMFCClientDlg::OnBnClickedButtonSendlog()
 	file.Close();
 	AfxMessageBox(_T("로그 파일 전송을 완료했습니다."));
 }
-
-
 
 
 void CMFCClientDlg::OnBnClickedButtonPause()
