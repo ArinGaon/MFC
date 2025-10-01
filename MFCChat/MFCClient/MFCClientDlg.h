@@ -48,6 +48,8 @@ public:
 	CString m_strMsg;
 	CStatic m_staticStatus;
 	BOOL m_bConnected;		// 연결상태확인
+	BOOL m_bPaused;
+	CProgressCtrl m_progressInfo;
 
 	afx_msg void OnBnClickedButtonConnect();
 	afx_msg void OnBnClickedButtonSend();

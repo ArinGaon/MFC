@@ -1,40 +1,55 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "CClientSocket.h"
 #include "MFCServerDlg.h"
-#include "resource.h" // IDC_STATIC_STATUS »ç¿ëÀ» À§ÇÔ
+#include "resource.h" // IDC_STATIC_STATUS
 
-// Å¬¶óÀÌ¾ðÆ®·ÎºÎÅÍ ¸Þ½ÃÁö°¡ µµÂøÇÏ¸é ÀÚµ¿À¸·Î È£Ãâ
 void CClientSocket::OnReceive(int nErrorCode)
 {
 	char szBuffer[1024];
-	// µ¥ÀÌÅÍ¸¦ szBuffer·Î ÀÐ¾î¿À°í, ÀÐ¾î¿Â ¹ÙÀÌÆ® ¼ö¸¦ nRead¿¡ ÀúÀå
-	int nRead = Receive(szBuffer, sizeof(szBuffer));
+	int nRead = Receive(szBuffer, sizeof(szBuffer) - 1);
 	if (nRead > 0)
 	{
 		szBuffer[nRead] = '\0';
-		CString strMessage(szBuffer);
+		m_strBuffer += szBuffer; // ë°›ì€ ë°ì´í„°ë¥¼ ë²„í¼ì— ì¶”ê°€
 
-		m_pDlg->AddMessageToList(strMessage);
-
-		POSITION pos = m_pDlg->m_clientSocketList.GetHeadPosition();
-		while (pos != NULL)
+		int nIndex;
+		// ë²„í¼ì—ì„œ \r\n (ì¤„ë°”ê¿ˆ)ì„ ì°¾ëŠ”ë‹¤.
+		while ((nIndex = m_strBuffer.Find(_T("\r\n"))) != -1)
 		{
-			CClientSocket* pClient = (CClientSocket*)m_pDlg->m_clientSocketList.GetNext(pos);
-			if (pClient != NULL && pClient != this)
+			// \r\n ì•žê¹Œì§€ì˜ ë¬¸ìžì—´ì„ í•œ ì¤„ë¡œ ì²˜ë¦¬
+			CString strLine = m_strBuffer.Left(nIndex);
+
+			// ì²˜ë¦¬í•œ ë¶€ë¶„ì€ ë²„í¼ì—ì„œ ì œê±°
+			m_strBuffer = m_strBuffer.Mid(nIndex + 2);
+
+			if (!strLine.IsEmpty())
 			{
-				CT2A ascii(strMessage);
-				pClient->Send(ascii.m_psz, strlen(ascii.m_psz));
+				// ì„œë²„ í™”ë©´ì— í‘œì‹œ
+				m_pDlg->AddMessageToList(strLine);
+
+				// ë‹¤ë¥¸ í´ë¼ì´ì–¸íŠ¸ì—ê²Œ ë¸Œë¡œë“œìºìŠ¤íŠ¸
+				POSITION pos = m_pDlg->m_clientSocketList.GetHeadPosition();
+				while (pos != NULL)
+				{
+					CClientSocket* pClient = (CClientSocket*)m_pDlg->m_clientSocketList.GetNext(pos);
+					if (pClient != NULL && pClient != this)
+					{
+						// ë‹¤ë¥¸ í´ë¼ì´ì–¸íŠ¸ì—ê²Œ ë³´ë‚¼ ë•Œë„ ì¤„ë°”ê¿ˆì„ ì¶”ê°€í•´ì¤€ë‹¤.
+						CString lineToSend = strLine + _T("\r\n");
+						CT2A ascii(lineToSend);
+						pClient->Send(ascii.m_psz, strlen(ascii.m_psz));
+					}
+				}
 			}
 		}
 	}
 	CAsyncSocket::OnReceive(nErrorCode);
 }
 
-// ¿¬°á ²÷°åÀ» ¶§ ÀÚµ¿ È£Ãâ
 void CClientSocket::OnClose(int nErrorCode)
 {
-	// ¸ÞÀÎ DlgÀÇ UI¸¦ ¾÷µ¥ÀÌÆ® ÇÏ¿© ¿¬°á Á¾·á »ç½Ç Àü´Þ
-	m_pDlg->AddMessageToList(_T("Å¬¶óÀÌ¾ðÆ® ¿¬°á Á¾·á"));
+
+	m_pDlg->AddMessageToList(_T("Client Disconnected"));
 	POSITION pos = m_pDlg->m_clientSocketList.Find(this);
 
 	if (pos != NULL)
@@ -42,7 +57,6 @@ void CClientSocket::OnClose(int nErrorCode)
 		m_pDlg->m_clientSocketList.RemoveAt(pos);
 	}
 	delete this;
-	// m_pDlg->SetDlgItemTextW(IDC_STATIC_STATUS, _T("Å¬¶óÀÌ¾ðÆ® ´ë±â Áß..."));
 
 	CAsyncSocket::OnClose(nErrorCode);
 }

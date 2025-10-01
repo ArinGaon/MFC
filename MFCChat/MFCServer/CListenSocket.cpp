@@ -2,24 +2,28 @@
 #include "CListenSocket.h"
 #include "MFCServerDlg.h"
 #include "resource.h"
-#include "CClientSocket.h" // CClientSocket Å¬·¡½º¸¦ ¾Ë¾Æ¾ß ÇÏ¹Ç·Î Ãß°¡
+#include "CClientSocket.h" // CClientSocket Å¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ë¾Æ¾ï¿½ ï¿½Ï¹Ç·ï¿½ ï¿½ß°ï¿½
 
 void CListenSocket::OnAccept(int nErrorCode)
 {
-	// »õ Å¬¶óÀÌ¾ğÆ®¸¦ À§ÇÑ ¼ÒÄÏÀ» »õ·Î ¸¸µë
+	if (nErrorCode != 0)
+	{
+		CAsyncSocket::OnAccept(nErrorCode);
+		return;
+	}
+	// ï¿½ï¿½ Å¬ï¿½ï¿½ï¿½Ì¾ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	CClientSocket* pClient = new CClientSocket;
 
-	// ¿¬°áÀ» ¼ö¶ôÇÏ°í, ¼º°øÇÏ¸é ¸®½ºÆ®¿¡ Ãß°¡
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½Ï¸ï¿½ ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ß°ï¿½
 	if (Accept(*pClient)) 
 	{
 		pClient->m_pDlg = m_pDlg;
-		m_pDlg->m_clientSocketList.AddTail(pClient); // ¸®½ºÆ®ÀÇ ¸Ç µÚ¿¡ Ãß°¡
-		m_pDlg->AddMessageToList(_T("Å¬¶óÀÌ¾ğÆ®°¡ ¿¬°áµÊ."));
-		// m_pDlg->SetDlgItemText(IDC_STATIC_STATUS, _T("Å¬¶óÀÌ¾ğÆ® ¿¬°áµÊ"));
+		m_pDlg->m_clientSocketList.AddTail(pClient);
+		m_pDlg->AddMessageToList(_T("ì„œë²„ ì ‘ì† ì™„ë£Œ."));
 	}
 	else
 	{
-		delete pClient; // ½ÇÆĞÇÏ¸é »èÁ¦
+		delete pClient; // ï¿½ï¿½ï¿½ï¿½ï¿½Ï¸ï¿½ ï¿½ï¿½ï¿½ï¿½
 	}
 		
 	CAsyncSocket::OnAccept(nErrorCode);

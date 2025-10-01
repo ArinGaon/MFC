@@ -67,6 +67,7 @@ void CMFCClientDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_SEND, m_strMsg);
 	DDX_Control(pDX, IDC_EDIT_FILEPATH, m_editFilePath);
 	DDX_Control(pDX, IDC_STATIC_STATUS, m_staticStatus);
+	DDX_Control(pDX, IDC_PROGRESS_INFO, m_progressInfo);
 }
 
 BEGIN_MESSAGE_MAP(CMFCClientDlg, CDialogEx)
@@ -77,6 +78,7 @@ BEGIN_MESSAGE_MAP(CMFCClientDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_SEND, &CMFCClientDlg::OnBnClickedButtonSend)
 	ON_BN_CLICKED(IDC_BUTTON_SENDLOG, &CMFCClientDlg::OnBnClickedButtonSendlog)
 	ON_BN_CLICKED(IDC_BUTTON_PAUSE, &CMFCClientDlg::OnBnClickedButtonPause)
+
 END_MESSAGE_MAP()
 
 
@@ -112,6 +114,8 @@ BOOL CMFCClientDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
+	m_ConnectSocket.m_pDlg = this;
+	m_ConnectSocket.Create();
 	m_bConnected = FALSE;
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
@@ -166,18 +170,21 @@ HCURSOR CMFCClientDlg::OnQueryDragIcon()
 
 void CMFCClientDlg::OnBnClickedButtonConnect()
 {
+	// [수정] 진단 메시지 추가 (올바른 함수 호출)
+	AddMessageToList(m_bConnected ? _T("DEBUG: OnBnClickedButtonConnect (State=Connected)") : _T("DEBUG: OnBnClickedButtonConnect (State=Disconnected)"));
+
 	// m_bConnected == FALSE
 	if (m_bConnected == FALSE)
 	{
 		UpdateData(TRUE);
 
-		m_ConnectSocket.Create();				// 1. 소켓을 생성
+		
 		m_ConnectSocket.m_pDlg = this;			// 2. 소켓에 다이얼로그 주소를 알려줌
 		m_ConnectSocket.Connect(m_strIP, 7000);	// 3. UI에서 입력받은 IP와 7000번 포트로 접속을 시도
 		// 접속 성공 여부는 OnConnect 함수에서 처리
 	}
 	// m_bConnected == TRUE
-	else
+	else // [수정] 실수로 삭제되었던 else문 복원
 	{
 		m_ConnectSocket.Close();
 	}
@@ -186,18 +193,18 @@ void CMFCClientDlg::OnBnClickedButtonConnect()
 void CMFCClientDlg::OnBnClickedButtonSend()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가
+	UpdateData(TRUE);
 	SendMsg(m_strMsg);
+	m_strMsg = _T("");
+	UpdateData(FALSE);
 }
 
 void CMFCClientDlg::SendMsg(CString string)
 {
-	UpdateData(TRUE);
-	CT2A ascii(string);
-	m_ConnectSocket.Send(ascii.m_psz, strlen(ascii.m_psz));
-
 	AddMessageToList(string);
-	string = _T("");
-	UpdateData(FALSE);
+	CString lineToSend = string + _T("\r\n");
+	CT2A ascii(lineToSend);
+	m_ConnectSocket.Send(ascii.m_psz, strlen(ascii.m_psz));
 }
 
 void CMFCClientDlg::AddMessageToList(CString str)
@@ -230,16 +237,33 @@ void CMFCClientDlg::OnBnClickedButtonSendlog()
 	MSG msg;             // UI 멈춤 방지용
 
 	ULONGLONG dwLength = file.GetLength();
+	// Progress Bar 및 Status 초기화
+	m_progressInfo.SetRange32(0, (int)dwLength);
+	m_progressInfo.SetPos(0);
+	m_staticStatus.SetWindowText(_T("전송 중..."));
+
 	for (ULONGLONG i = 0; i < dwLength; i++)
 	{
+		// Pause 버튼
+		while (m_bPaused)
+		{
+			Sleep(100);
+			if (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+		}
+
 		file.Read(&ch, 1);
+		m_progressInfo.SetPos((int)i + 1); // 진행상황 업데이트
 
 		// CRLF 처리
 		if (prevCh == '\r' && ch == '\n')
 		{
 			prevCh = ch;
-			continue; // LF 처리에서 줄바꿈이 일어나므로 중복 방지
-		}
+			continue; // LF 처리에서 줄바꿈이 일어나므로 중복방지
+		} 
 
 		// CR/LF 각각 처리
 		if (ch == '\r' || ch == '\n')
@@ -247,7 +271,9 @@ void CMFCClientDlg::OnBnClickedButtonSendlog()
 			if (!currentLine.IsEmpty())
 			{
 				// 한 줄을 서버로 전송
-				CT2A ascii(currentLine);
+				AddMessageToList(currentLine); // 클라이언트 화면에 표시
+				CString lineToSend = currentLine + _T("\r\n"); // 줄바꿈 추가
+				CT2A ascii(lineToSend);
 				m_ConnectSocket.Send(ascii.m_psz, strlen(ascii.m_psz));
 				currentLine.Empty(); // 보낸 후에는 비움
 			}
@@ -268,19 +294,32 @@ void CMFCClientDlg::OnBnClickedButtonSendlog()
 	// 파일 끝에 줄바꿈 없이 내용이 남아있는 경우 마지막 줄 전송
 	if (!currentLine.IsEmpty())
 	{
-		CT2A ascii(currentLine);
-		m_ConnectSocket.Send(ascii.m_psz, strlen(ascii.m_psz));
+		AddMessageToList(currentLine); // 클라이언트 화면에 표시
+		CString lineToSend = currentLine + _T("\r\n"); // 줄바꿈 추가
+		CT2A ascii(lineToSend);
+			m_ConnectSocket.Send(ascii.m_psz, strlen(ascii.m_psz));
 	}
 
 	file.Close();
+	m_staticStatus.SetWindowText(_T("전송 완료."));
 	AfxMessageBox(_T("로그 파일 전송을 완료했습니다."));
 }
-
 
 void CMFCClientDlg::OnBnClickedButtonPause()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	m_bPaused = !m_bPaused;
 
+	if (m_bPaused)
+	{
+		SetDlgItemText(IDC_BUTTON_PAUSE, _T("Restart"));
+		m_staticStatus.SetWindowText(_T("일시정지됨"));
+	}
+	else
+	{
+		SetDlgItemText(IDC_BUTTON_PAUSE, _T("Pause"));
+		m_staticStatus.SetWindowText(_T("전송 중..."));
+	}
 }
 
 
@@ -351,4 +390,3 @@ void CMFCClientDlg::ReadFile(const CString& filePath)
 	file.Close();
 	m_staticStatus.SetWindowText(_T("파일 로드 완료"));
 }
-

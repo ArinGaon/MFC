@@ -1,20 +1,24 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "CConnectSocket.h"
 #include "MFCClientDlg.h"
 #include "resource.h"
 
 void CConnectSocket::OnConnect(int nErrorCode)
 {
+	CString str;
+	str.Format(_T("DEBUG: OnConnect Called (ErrorCode: %d)"), nErrorCode);
+	m_pDlg->AddMessageToList(str);
 	if (nErrorCode == 0)
 	{
-		m_pDlg->AddMessageToList(_T("¼­¹ö¿¡ Á¢¼Ó ¿Ï·á"));
-		// ¹öÆ° ¼öÁ¤
+		m_pDlg->AddMessageToList(_T("ì„œë²„ ì ‘ì† ì™„ë£Œ"));
+		// ï¿½ï¿½Æ° ï¿½ï¿½ï¿½ï¿½
 		m_pDlg->SetDlgItemText(IDC_BUTTON_CONNECT, _T("Disconnect"));
 		m_pDlg->m_bConnected = TRUE;
 	}
 	else
 	{
-		m_pDlg->AddMessageToList(_T("¼­¹ö Á¢¼Ó ½ÇÆÐ"));
+		m_pDlg->AddMessageToList(_T("ì„œë²„ ì ‘ì† ì‹¤íŒ¨"));
+		m_pDlg->m_ConnectSocket.Close();
 	}
 	CAsyncSocket::OnConnect(nErrorCode);
 }
@@ -22,18 +26,39 @@ void CConnectSocket::OnConnect(int nErrorCode)
 void CConnectSocket::OnReceive(int nErrorCode)
 {
 	char szBuffer[1024];
-	int nRead = Receive(szBuffer, sizeof(szBuffer));
-	szBuffer[nRead] = '\0';
+	int nRead = Receive(szBuffer, sizeof(szBuffer) - 1);
+	if (nRead > 0)
+	{
+		szBuffer[nRead] = '\0';
+		m_strBuffer += szBuffer; // ë°›ì€ ë°ì´í„°ë¥¼ ë²„í¼ì— ì¶”ê°€
 
-	m_pDlg->AddMessageToList(CString(szBuffer));
+		int nIndex;
+		// ë²„í¼ì—ì„œ \r\n (ì¤„ë°”ê¿ˆ)ì„ ì°¾ëŠ”ë‹¤.
+		while ((nIndex = m_strBuffer.Find(_T("\r\n"))) != -1)
+		{
+			// \r\n ì•žê¹Œì§€ì˜ ë¬¸ìžì—´ì„ í•œ ì¤„ë¡œ ì²˜ë¦¬
+			CString strLine = m_strBuffer.Left(nIndex);
 
+			// ì²˜ë¦¬í•œ ë¶€ë¶„ì€ ë²„í¼ì—ì„œ ì œê±°
+			m_strBuffer = m_strBuffer.Mid(nIndex + 2);
+
+			if (!strLine.IsEmpty())
+			{
+				// í´ë¼ì´ì–¸íŠ¸ í™”ë©´ì— í‘œì‹œ
+				m_pDlg->AddMessageToList(strLine);
+			}
+		}
+	}
 	CAsyncSocket::OnReceive(nErrorCode);
 }
 
 void CConnectSocket::OnClose(int nErrorCode)
 {
-	m_pDlg->AddMessageToList(_T("¼­¹ö¿Í ¿¬°áÀÌ Á¾·áµÊ"));
-	// ¹öÆ° ¼öÁ¤
+	CString str;
+	str.Format(_T("DEBUG: OnClose Called (ErrorCode: %d)"), nErrorCode);
+	m_pDlg->AddMessageToList(str);
+	m_pDlg->AddMessageToList(_T("ì„œë²„ ì—°ê²° ì¢…ë£Œë¨"));
+	// ï¿½ï¿½Æ° ï¿½ï¿½ï¿½ï¿½
 	m_pDlg->SetDlgItemText(IDC_BUTTON_CONNECT, _T("Connect"));
 	m_pDlg->m_bConnected = FALSE;
 	CAsyncSocket::OnClose(nErrorCode);
