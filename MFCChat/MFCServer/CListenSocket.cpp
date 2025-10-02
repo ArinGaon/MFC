@@ -2,7 +2,7 @@
 #include "CListenSocket.h"
 #include "MFCServerDlg.h"
 #include "resource.h"
-#include "CClientSocket.h" // CClientSocket Ŭ������ �˾ƾ� �ϹǷ� �߰�
+#include "CClientSocket.h"
 
 void CListenSocket::OnAccept(int nErrorCode)
 {
@@ -11,10 +11,8 @@ void CListenSocket::OnAccept(int nErrorCode)
 		CAsyncSocket::OnAccept(nErrorCode);
 		return;
 	}
-	// �� Ŭ���̾�Ʈ�� ���� ������ ���� ����
 	CClientSocket* pClient = new CClientSocket;
 
-	// ������ �����ϰ�, �����ϸ� ����Ʈ�� �߰�
 	if (Accept(*pClient)) 
 	{
 		pClient->m_pDlg = m_pDlg;
@@ -23,7 +21,7 @@ void CListenSocket::OnAccept(int nErrorCode)
 	}
 	else
 	{
-		delete pClient; // �����ϸ� ����
+		delete pClient;
 	}
 		
 	CAsyncSocket::OnAccept(nErrorCode);

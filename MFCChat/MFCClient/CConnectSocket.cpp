@@ -6,12 +6,10 @@
 void CConnectSocket::OnConnect(int nErrorCode)
 {
 	CString str;
-	str.Format(_T("DEBUG: OnConnect Called (ErrorCode: %d)"), nErrorCode);
 	m_pDlg->AddMessageToList(str);
 	if (nErrorCode == 0)
 	{
 		m_pDlg->AddMessageToList(_T("서버 접속 완료"));
-		// ��ư ����
 		m_pDlg->SetDlgItemText(IDC_BUTTON_CONNECT, _T("Disconnect"));
 		m_pDlg->m_bConnected = TRUE;
 	}
@@ -55,10 +53,8 @@ void CConnectSocket::OnReceive(int nErrorCode)
 void CConnectSocket::OnClose(int nErrorCode)
 {
 	CString str;
-	str.Format(_T("DEBUG: OnClose Called (ErrorCode: %d)"), nErrorCode);
 	m_pDlg->AddMessageToList(str);
 	m_pDlg->AddMessageToList(_T("서버 연결 종료됨"));
-	// ��ư ����
 	m_pDlg->SetDlgItemText(IDC_BUTTON_CONNECT, _T("Connect"));
 	m_pDlg->m_bConnected = FALSE;
 	CAsyncSocket::OnClose(nErrorCode);

@@ -230,7 +230,6 @@ void CMFCClientDlg::OnBnClickedButtonSendlog()
 		return;
 	}
 
-	// 3. CR/LF/CRLF를 모두 처리하는 '완전체' 읽기/전송 루프
 	char ch;
 	char prevCh = 0;
 	CString currentLine; // 현재 읽고 있는 한 줄을 저장할 변수
@@ -247,7 +246,7 @@ void CMFCClientDlg::OnBnClickedButtonSendlog()
 		// Pause 버튼
 		while (m_bPaused)
 		{
-			Sleep(100);
+			Sleep(10);
 			if (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 			{
 				TranslateMessage(&msg);
